@@ -18,9 +18,9 @@ import * as THREE from 'three';
 import { IRepData } from '@/types/index';
 import ThreeMesh from '@/components/three-mesh';
 import { CloudMesh } from '@/components/three-cloud-mesh';
-import { ConfirmationHistoryTable } from '@/components/confirmation-history-table';
+import { SlotHistoryTable } from '@/components/slot-history-table';
 import { DonationImagePopover } from '@/components/donation-image-popover';
-import { useConfirmations } from '@/providers/confirmation-provider';
+import { useSlots } from '@/providers/slot-provider';
 import { DonationAnimation } from '@/components/donation-animation';
 import { parseNanoAmount } from '@/lib/parse-nano-amount';
 import { Vector3 } from 'three';
@@ -59,7 +59,7 @@ const ThreeSceneClient: React.FC<ThreeSceneClientProps> = ({
     serverDateTime || new Date()
   );
   const [hoveredNode, setHoveredNode] = useState<IRepData | null>(null);
-  const { confirmationHistory: confirmations } = useConfirmations();
+  const { slotHistory: slots } = useSlots();
   const [launchQueue, setLaunchQueue] = useState<Vector3[]>([]);
   const [isRocketView, setIsRocketView] = useState(false);
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
@@ -157,33 +157,15 @@ const ThreeSceneClient: React.FC<ThreeSceneClientProps> = ({
   }, [serverDateTime]);
 
   useEffect(() => {
-    const latestConfirmation = confirmations[0];
-    if (latestConfirmation) {
-      const isDonation =
-        latestConfirmation.message.block.link_as_account ===
-        APP_CONFIG.donations.nano;
-      const amount = parseNanoAmount(latestConfirmation.message.amount);
-      const isSend = latestConfirmation.message.block.subtype === 'send';
-      if (isDonation) {
-        // Trigger existing donation animation
-        if ((window as any).triggerDonationAnimation) {
-          (window as any).triggerDonationAnimation(amount);
-        }
-      }
-
-      if (isSend) {
-        const newRocketCount = Math.max(
-          scaleRocketCount(amount),
-          rocketCount === 0 ? 1 : 0
-        );
-
-        for (let i = 0; i < newRocketCount; i++) {
-          const randomPosition = getRandomPositionOnGlobe();
-          rocketManagerRef.current?.addRocket(randomPosition);
-        }
+    const latestSlot = slots[0];
+    if (latestSlot) {
+      const newRocketCount = 1;
+      for (let i = 0; i < newRocketCount; i++) {
+        const randomPosition = getRandomPositionOnGlobe();
+        rocketManagerRef.current?.addRocket(randomPosition);
       }
     }
-  }, [confirmations]);
+  }, [slots]);
 
   const handleRocketComplete = (id: string) => {
     setRocketCount((prevCount) => prevCount - 1);
@@ -373,7 +355,7 @@ const ThreeSceneClient: React.FC<ThreeSceneClientProps> = ({
           <div className="flex items-center gap-2 text-white">
             Active <Rocket className="w-4 h-4 text-red-600" /> {rocketCount}
           </div>
-          <ConfirmationHistoryTable />
+          <SlotHistoryTable />
         </div>
       </div>
 

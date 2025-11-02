@@ -120,3 +120,18 @@ export interface NanoConfirmation {
     };
   };
 }
+
+export interface ISolanaSlot {
+  current_IP: string;
+  current_leader: string;
+  current_parent: number;
+  current_root: number;
+  current_slot: number;
+  current_slot_time: number;
+  previous_IP: string;
+  previous_leader: string;
+  previous_parent: number;
+  previous_root: number;
+  previous_slot: number;
+  previous_slot_time: number;
+}

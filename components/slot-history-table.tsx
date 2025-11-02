@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useConfirmations } from '@/providers/confirmation-provider';
-import { parseNanoAmount } from '@/lib/parse-nano-amount';
-import { getStyleByNanoAmount } from '@/lib/get-style-by-nano-amount';
+import { useSlots } from '@/providers/slot-provider';
 import {
   Tooltip,
   TooltipContent,
@@ -11,33 +9,31 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { getRepName } from '@/lib/get-rep-name';
 import { truncateAddress } from '@/lib/truncate-address';
 import { formatRelativeTime } from '@/lib/format-relative-time';
-import { NanoConfirmation } from '@/types/index';
+import { ISolanaSlot } from '@/types/index';
 import { Maximize2, Minimize2, ChevronDown, ChevronUp } from 'lucide-react';
-import { APP_CONFIG } from '@/constants/config';
 
-interface ConfirmationHistoryTableProps {}
+interface SlotHistoryTableProps {}
 
-export const ConfirmationHistoryTable: React.FC<
-  ConfirmationHistoryTableProps
+export const SlotHistoryTable: React.FC<
+  SlotHistoryTableProps
 > = () => {
-  const { confirmationHistory } = useConfirmations();
-  const [isFullView, setIsFullView] = useState(false);
-  const [limitedHistory, setLimitedHistory] = useState<NanoConfirmation[]>([]);
+  const { slotHistory } = useSlots();
+  const [isFullView, setIsFullView] = useState(true);
+  const [limitedHistory, setLimitedHistory] = useState<ISolanaSlot[]>([]);
   const [showLessRows, setShowLessRows] = useState(true);
 
-  const displayedConfirmations = useMemo(() => {
+  const displayedSlots = useMemo(() => {
     if (showLessRows && window.innerWidth < 768) {
-      return confirmationHistory.slice(0, 3);
+      return slotHistory.slice(0, 3);
     }
-    return confirmationHistory;
-  }, [confirmationHistory, showLessRows]);
+    return slotHistory;
+  }, [slotHistory, showLessRows]);
 
   useEffect(() => {
-    setLimitedHistory(displayedConfirmations.slice(0, 100));
-  }, [displayedConfirmations]);
+    setLimitedHistory(displayedSlots.slice(0, 100));
+  }, [displayedSlots]);
 
   const toggleView = () => {
     setIsFullView(!isFullView);
@@ -90,39 +86,28 @@ export const ConfirmationHistoryTable: React.FC<
             <tr>
               {isFullView && (
                 <>
-                  <th className="p-1 md:p-2 text-left">Age</th>
+                  <th className="p-1 md:p-2 text-left">Slot</th>
                   {window.innerWidth >= 768 && (
                     <>
-                      <th className="p-1 md:p-2 text-left">Account</th>
-                      <th className="p-1 md:p-2 text-left">Representative</th>
-                      <th className="p-1 md:p-2 text-left">Type</th>
+                      <th className="p-1 md:p-2 text-left">Leader</th>
                     </>
                   )}
                 </>
               )}
-              <th className="p-1 md:p-2 text-left">Amount (Ӿ)</th>
+              <th className="p-1 md:p-2 text-left">Time</th>
             </tr>
           </thead>
           <tbody>
             {limitedHistory.map(
-              (confirmation: NanoConfirmation, index: number) => {
-                const amount = parseNanoAmount(confirmation.message.amount);
-                const style = getStyleByNanoAmount(amount);
-                const isDonation =
-                  confirmation.message.block.link_as_account ===
-                  APP_CONFIG.donations.nano;
-                const repName = getRepName(
-                  confirmation.message.block.representative
-                );
+              (slot: ISolanaSlot, index: number) => {
                 return (
                   <tr
-                    key={`${confirmation.message.hash}-${index}`}
-                    className={isDonation ? 'bg-blue-600 text-white' : ''}
+                    key={`${slot.current_slot}-${index}`}
                   >
                     {isFullView && (
                       <>
                         <td className="p-1 md:p-2 text-gray-400">
-                          {formatRelativeTime(parseInt(confirmation.time))}
+                          {slot.current_slot}
                         </td>
                         {window.innerWidth >= 768 && (
                           <>
@@ -136,46 +121,24 @@ export const ConfirmationHistoryTable: React.FC<
                                   <TooltipTrigger>
                                     <span className="cursor-help text-gray-400">
                                       {truncateAddress(
-                                        confirmation.message.account
+                                        slot.current_leader
                                       )}
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent className="bg-black">
                                     <span className="bg-black text-white border-1 border-gray-300 p-2 select-text">
-                                      {confirmation.message.account}
+                                      {slot.current_leader}
                                     </span>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-                            </td>
-                            <td className="p-1 md:p-2">
-                              <span
-                                className={`${
-                                  repName ? 'text-[#ffa31a]' : 'text-gray-400'
-                                }`}
-                              >
-                                {repName ??
-                                  truncateAddress(
-                                    confirmation.message.block.representative
-                                  )}
-                              </span>
-                            </td>
-                            <td className="p-1 md:p-2">
-                              {isDonation ? (
-                                'Donation💰'
-                              ) : confirmation.message.block.subtype.toLocaleUpperCase() ===
-                                'SEND' ? (
-                                <span className="text-red-500">Send</span>
-                              ) : (
-                                <span className="text-green-500">Receive</span>
-                              )}
                             </td>
                           </>
                         )}
                       </>
                     )}
                     <td className={`p-1 md:p-2 ${isFullView ? '' : 'w-full'}`}>
-                      <span style={{ color: style.hexColor }}>Ӿ {amount}</span>
+                      <span>{slot.current_slot_time}</span>
                     </td>
                   </tr>
                 );
@@ -188,4 +151,4 @@ export const ConfirmationHistoryTable: React.FC<
   );
 };
 
-export default ConfirmationHistoryTable;
+export default SlotHistoryTable;
